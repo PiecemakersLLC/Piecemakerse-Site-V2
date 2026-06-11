@@ -319,7 +319,7 @@ window.addEventListener('load', function () {
   var ballBody    = null;
   var ballState   = 'idle';   // idle | falling | returning
   var ballRadius  = 0;
-  var returnStart = 0;
+  var returnStart = 0;   // 0 = not yet armed
   var returnFromX = 0;
   var returnFromY = 0;
 
@@ -347,12 +347,19 @@ window.addEventListener('load', function () {
 
   var fallTimer = null;
 
-  function triggerReturn(fromX, fromY, ts) {
-    if (ballBody) { World.remove(world, ballBody); }
-    returnFromX = fromX;
-    returnFromY = fromY;
-    returnStart = ts;
-    ballState   = 'returning';
+  function triggerReturn() {
+    if (ballBody) { World.remove(world, ballBody); ballBody = null; }
+    if (fallTimer) { clearTimeout(fallTimer); fallTimer = null; }
+    ballState = 'returning';
+    // Scroll to top so the hero is visible, then drop the ball
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Delay start until scroll has had time to begin
+    setTimeout(function () {
+      var dp  = getDotScreenPos();
+      returnFromX = dp.x;
+      returnFromY = -ballRadius * 4;   // above viewport
+      returnStart = performance.now();
+    }, 350);
   }
 
   dot.addEventListener('click', function () {
@@ -366,14 +373,14 @@ window.addEventListener('load', function () {
     Matter.Body.setStatic(ballBody, false);
     var dir = Math.random() > 0.5 ? 1 : -1;
     Matter.Body.setVelocity(ballBody, { x: dir * (2.5 + Math.random() * 1.5), y: 1 });
-    ballState = 'falling';
+    ballState   = 'falling';
+    returnStart = 0;   // reset guard
 
-    // Safety net: if ball gets stuck and never falls off, force return after 6s
+    // Safety net: if ball gets stuck on iOS, force return after 6s
     if (fallTimer) clearTimeout(fallTimer);
     fallTimer = setTimeout(function () {
       if (ballState !== 'falling') return;
-      var px = ballBody ? ballBody.position.x : window.innerWidth / 2;
-      triggerReturn(px, window.innerHeight + ballRadius, performance.now());
+      triggerReturn();
     }, 6000);
   });
 
@@ -393,6 +400,7 @@ window.addEventListener('load', function () {
 
     // ── RETURN: fly back to A dot, fade out, restore SVG ───────────────
     if (ballState === 'returning') {
+      if (!returnStart) return;   // waiting for scroll + setTimeout to fire
       var DURATION = 520;
       var t    = Math.min((now - returnStart) / DURATION, 1);
       var ease = 1 - Math.pow(1 - t, 3);            // ease-out cubic
@@ -431,8 +439,7 @@ window.addEventListener('load', function () {
     var pageH = document.documentElement.scrollHeight;
 
     if (pos.y > pageH + bR * 2) {
-      if (fallTimer) { clearTimeout(fallTimer); fallTimer = null; }
-      triggerReturn(pos.x, -bR * 3, now);
+      triggerReturn();
       return;
     }
 
