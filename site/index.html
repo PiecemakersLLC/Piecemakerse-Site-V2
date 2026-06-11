@@ -267,18 +267,23 @@ window.addEventListener('load', function () {
 
   var canvas = document.getElementById('physics-canvas');
   var ctx    = canvas.getContext('2d');
-  var DPR    = window.devicePixelRatio || 1;
+  var DPR    = 1;
   function setCanvasSize() {
+    DPR = window.devicePixelRatio || 1;  // re-read every call — handles pinch zoom
     var w = window.innerWidth, h = window.innerHeight;
     canvas.width  = w * DPR;
     canvas.height = h * DPR;
     canvas.style.width  = w + 'px';
     canvas.style.height = h + 'px';
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);  // scale all drawing to physical pixels
-    ctx.imageSmoothingEnabled = false;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.imageSmoothingEnabled = true;    // keep ON — circles need anti-aliasing
   }
   setCanvasSize();
   window.addEventListener('resize', function () { setCanvasSize(); buildWorld(); });
+  // visualViewport fires on pinch-zoom so canvas resolution stays sharp
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', setCanvasSize);
+  }
 
   var engine = Engine.create({ gravity: { x: 0, y: 2 } });
   var world  = engine.world;
@@ -322,14 +327,18 @@ window.addEventListener('load', function () {
 
   function getDotScreenPos() {
     try {
-      var bbox = dot.getBBox();
-      var pt   = dot.ownerSVGElement.createSVGPoint();
-      pt.x = bbox.x + bbox.width  / 2;
-      pt.y = bbox.y + bbox.height / 2;
-      var sp = pt.matrixTransform(dot.getScreenCTM());
-      var r  = Math.max(bbox.width / 2, bbox.height / 2,
-                        dot.ownerSVGElement.getBoundingClientRect().width * 0.008, 8);
-      return { x: sp.x, y: sp.y, r: r };
+      var svgEl   = dot.ownerSVGElement;
+      var svgRect = svgEl.getBoundingClientRect();
+      var vb      = svgEl.viewBox.baseVal;           // x:140 y:458 w:916 h:284
+      var bbox    = dot.getBBox();                   // dot in SVG local coords
+      var cx = bbox.x + bbox.width  / 2;
+      var cy = bbox.y + bbox.height / 2;
+      var sx = svgEl.getBoundingClientRect().width  / vb.width;
+      var sy = svgEl.getBoundingClientRect().height / vb.height;
+      var x  = svgRect.left + (cx - vb.x) * sx;
+      var y  = svgRect.top  + (cy - vb.y) * sy;
+      var r  = Math.max(bbox.width * sx / 2, bbox.height * sy / 2, 8);
+      return { x: x, y: y, r: r };
     } catch(e) {
       var fb = dot.getBoundingClientRect();
       return { x: fb.left + fb.width/2, y: fb.top + fb.height/2, r: Math.max(fb.width/2, 8) };
