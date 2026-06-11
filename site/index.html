@@ -345,6 +345,16 @@ window.addEventListener('load', function () {
     }
   }
 
+  var fallTimer = null;
+
+  function triggerReturn(fromX, fromY, ts) {
+    if (ballBody) { World.remove(world, ballBody); }
+    returnFromX = fromX;
+    returnFromY = fromY;
+    returnStart = ts;
+    ballState   = 'returning';
+  }
+
   dot.addEventListener('click', function () {
     if (ballState !== 'idle') return;
     dot.classList.add('fired');
@@ -357,6 +367,14 @@ window.addEventListener('load', function () {
     var dir = Math.random() > 0.5 ? 1 : -1;
     Matter.Body.setVelocity(ballBody, { x: dir * (2.5 + Math.random() * 1.5), y: 1 });
     ballState = 'falling';
+
+    // Safety net: if ball gets stuck and never falls off, force return after 6s
+    if (fallTimer) clearTimeout(fallTimer);
+    fallTimer = setTimeout(function () {
+      if (ballState !== 'falling') return;
+      var px = ballBody ? ballBody.position.x : window.innerWidth / 2;
+      triggerReturn(px, window.innerHeight + ballRadius, performance.now());
+    }, 6000);
   });
 
   var lastScrollY = window.scrollY;
@@ -393,7 +411,8 @@ window.addEventListener('load', function () {
       ctx.globalAlpha = 1;
 
       if (t >= 1) {
-        dot.classList.remove('fired');   // SVG dot reappears
+        if (fallTimer) { clearTimeout(fallTimer); fallTimer = null; }
+        dot.classList.remove('fired');
         ballBody  = null;
         ballState = 'idle';
       }
@@ -412,12 +431,8 @@ window.addEventListener('load', function () {
     var pageH = document.documentElement.scrollHeight;
 
     if (pos.y > pageH + bR * 2) {
-      // Ball left the page — start return flight
-      World.remove(world, ballBody);
-      returnFromX = pos.x - window.scrollX;
-      returnFromY = -bR * 3;                         // start above top of viewport
-      returnStart = now;
-      ballState   = 'returning';
+      if (fallTimer) { clearTimeout(fallTimer); fallTimer = null; }
+      triggerReturn(pos.x, -bR * 3, now);
       return;
     }
 
