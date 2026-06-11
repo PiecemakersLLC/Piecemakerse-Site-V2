@@ -267,135 +267,149 @@ window.addEventListener('load', function () {
 
   var canvas = document.getElementById('physics-canvas');
   var ctx    = canvas.getContext('2d');
-  function setCanvasSize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  var DPR    = window.devicePixelRatio || 1;
+  function setCanvasSize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    canvas.width  = w * DPR;
+    canvas.height = h * DPR;
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);  // scale all drawing to physical pixels
+    ctx.imageSmoothingEnabled = false;
+  }
   setCanvasSize();
   window.addEventListener('resize', function () { setCanvasSize(); buildWorld(); });
 
   var engine = Engine.create({ gravity: { x: 0, y: 2 } });
   var world  = engine.world;
-  var planks = [];
 
   function buildWorld() {
     World.clear(world, false);
-    planks = [];
-
-    var pageEl    = document.querySelector('.page');
-    var pageRect  = pageEl ? pageEl.getBoundingClientRect() : null;
-    var innerL    = pageRect ? pageRect.left  : 0;
-    var innerR    = pageRect ? pageRect.right : window.innerWidth;
-    var wallL     = innerL;
-    var wallR     = innerR;
-
+    var pageEl   = document.querySelector('.page');
+    var pageRect = pageEl ? pageEl.getBoundingClientRect() : null;
+    var innerL   = pageRect ? pageRect.left  : 0;
+    var innerR   = pageRect ? pageRect.right : window.innerWidth;
     var GAP = 110, THICK = 24;
     for (var i = 0; i <= 4; i++) {
       var rule = document.getElementById('rule-' + i);
       if (!rule) continue;
       var r      = rule.getBoundingClientRect();
       var worldY = r.top + window.scrollY;
-      var lx     = Math.max(r.left,  innerL);
+      var lx     = Math.max(r.left, innerL);
       var rx     = Math.min(r.right, innerR);
-      var totalW = rx - lx;
-      var plankW = totalW - GAP;
-      var cx = (i % 2 === 0) ? lx + plankW / 2 : lx + GAP + plankW / 2;
-      var plank = Bodies.rectangle(cx, worldY, plankW, THICK, { isStatic: true, restitution: 0.3, friction: 0.1 });
-      planks.push(plank);
-      World.add(world, plank);
+      var plankW = (rx - lx) - GAP;
+      var cx     = (i % 2 === 0) ? lx + plankW / 2 : lx + GAP + plankW / 2;
+      World.add(world, Bodies.rectangle(cx, worldY, plankW, THICK, { isStatic: true, restitution: 0.3, friction: 0.1 }));
     }
-
     var pageH = document.documentElement.scrollHeight;
-    World.add(world, Bodies.rectangle(window.innerWidth / 2, pageH + 60, window.innerWidth * 3, 20, { isStatic: true, restitution: 0.05, friction: 1 }));
+    World.add(world, Bodies.rectangle(window.innerWidth / 2, pageH + 60, window.innerWidth * 3, 20, { isStatic: true }));
     World.add(world, [
-      Bodies.rectangle(wallL - 5, pageH / 2, 10, pageH * 2, { isStatic: true, restitution: 0.4, friction: 0.1 }),
-      Bodies.rectangle(wallR + 5, pageH / 2, 10, pageH * 2, { isStatic: true, restitution: 0.4, friction: 0.1 })
+      Bodies.rectangle(innerL - 5, pageH / 2, 10, pageH * 2, { isStatic: true, restitution: 0.4 }),
+      Bodies.rectangle(innerR + 5, pageH / 2, 10, pageH * 2, { isStatic: true, restitution: 0.4 })
     ]);
-
     if (ballBody) World.add(world, ballBody);
   }
-
   buildWorld();
 
-  var ballBody   = null;
-  var ballState  = 'idle';
-  var dotWorldX  = 0;
-  var dotWorldY  = 0;
-  var ballRadius = 0;
+  var ballBody    = null;
+  var ballState   = 'idle';   // idle | falling | returning
+  var ballRadius  = 0;
+  var returnStart = 0;
+  var returnFromX = 0;
+  var returnFromY = 0;
 
   var dot = document.getElementById('logo-dot');
 
-  function launchBall() {
-    Matter.Body.setStatic(ballBody, false);
-    var dir = Math.random() > 0.5 ? 1 : -1;
-    Matter.Body.setVelocity(ballBody, { x: dir * (2.5 + Math.random() * 1.5), y: 1 });
-    ballState = 'falling';
+  function getDotScreenPos() {
+    try {
+      var bbox = dot.getBBox();
+      var pt   = dot.ownerSVGElement.createSVGPoint();
+      pt.x = bbox.x + bbox.width  / 2;
+      pt.y = bbox.y + bbox.height / 2;
+      var sp = pt.matrixTransform(dot.getScreenCTM());
+      var r  = Math.max(bbox.width / 2, bbox.height / 2,
+                        dot.ownerSVGElement.getBoundingClientRect().width * 0.008, 8);
+      return { x: sp.x, y: sp.y, r: r };
+    } catch(e) {
+      var fb = dot.getBoundingClientRect();
+      return { x: fb.left + fb.width/2, y: fb.top + fb.height/2, r: Math.max(fb.width/2, 8) };
+    }
   }
 
   dot.addEventListener('click', function () {
     if (ballState !== 'idle') return;
     dot.classList.add('fired');
-    var r      = dot.getBoundingClientRect();
-    dotWorldX  = r.left + r.width  / 2;
-    dotWorldY  = r.top  + r.height / 2 + window.scrollY;
-    ballRadius = Math.max(r.width / 2, 8);
-    ballBody   = Bodies.circle(dotWorldX, dotWorldY, ballRadius, { restitution: 0.55, friction: 0.02, frictionAir: 0.008, density: 0.002, label: 'ball' });
+    var dp     = getDotScreenPos();
+    ballRadius = dp.r;
+    ballBody   = Bodies.circle(dp.x, dp.y + window.scrollY, ballRadius,
+                   { restitution: 0.55, friction: 0.02, frictionAir: 0.008, density: 0.002, label: 'ball' });
     World.add(world, ballBody);
-    launchBall();
-  });
-
-  document.addEventListener('click', function (e) {
-    if (ballState !== 'ready' || !ballBody) return;
-    var bx = ballBody.position.x;
-    var by = ballBody.position.y - window.scrollY;
-    var dx = e.clientX - bx, dy = e.clientY - by;
-    if (Math.sqrt(dx*dx + dy*dy) < ballRadius * 3) launchBall();
+    Matter.Body.setStatic(ballBody, false);
+    var dir = Math.random() > 0.5 ? 1 : -1;
+    Matter.Body.setVelocity(ballBody, { x: dir * (2.5 + Math.random() * 1.5), y: 1 });
+    ballState = 'falling';
   });
 
   var lastScrollY = window.scrollY;
   window.addEventListener('scroll', function () {
-    if (!ballBody) return;
-    var dy = window.scrollY - lastScrollY;
-    lastScrollY = window.scrollY;
-    if (ballState === 'falling') {
+    if (ballState === 'falling' && ballBody) {
+      var dy = window.scrollY - lastScrollY;
       Body.applyForce(ballBody, ballBody.position, { x: dy * 0.0006, y: 0 });
     }
-    if (ballState === 'offscreen') {
-      // Recalculate dot position fresh in case layout shifted (fixes mobile reset position)
-      var dotR = dot.getBoundingClientRect();
-      dotWorldX = dotR.left + dotR.width  / 2;
-      dotWorldY = dotR.top  + dotR.height / 2 + window.scrollY;
-      var heroBottom = dotWorldY - window.scrollY;
-      if (heroBottom > 0) {
-        Matter.Body.setPosition(ballBody, { x: dotWorldX, y: -ballRadius * 2 });
-        Matter.Body.setVelocity(ballBody, { x: 0, y: 3 });
-        Matter.Body.setStatic(ballBody, false);
-        ballState = 'returning';
-      }
-    }
+    lastScrollY = window.scrollY;
   }, { passive: true });
 
   var lastTime = 0;
   function loop(now) {
     requestAnimationFrame(loop);
-    var delta = Math.min(now - lastTime, 32);
-    lastTime = now;
-    if (delta > 0) Engine.update(engine, delta, delta / 16.667);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!ballBody || ballState === 'offscreen') return;
 
-    var pos    = ballBody.position;
-    var bR     = ballBody.circleRadius;
-    var pageH  = document.documentElement.scrollHeight;
+    // ── RETURN: fly back to A dot, fade out, restore SVG ───────────────
+    if (ballState === 'returning') {
+      var DURATION = 520;
+      var t    = Math.min((now - returnStart) / DURATION, 1);
+      var ease = 1 - Math.pow(1 - t, 3);            // ease-out cubic
 
-    if (ballState === 'falling' && pos.y > pageH - 20) {
-      Matter.Body.setPosition(ballBody, { x: dotWorldX, y: -bR * 2 });
-      Matter.Body.setVelocity(ballBody, { x: 0, y: 0 });
-      ballState = 'offscreen';
+      var dp   = getDotScreenPos();
+      var curX = returnFromX + (dp.x - returnFromX) * ease;
+      var curY = returnFromY + (dp.y - returnFromY) * ease;
+
+      // Fade out over the last 35% so ball dissolves into the dot
+      var alpha = t > 0.65 ? Math.max(0, 1 - (t - 0.65) / 0.35) : 1;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(curX, curY, ballRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#252523';
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      if (t >= 1) {
+        dot.classList.remove('fired');   // SVG dot reappears
+        ballBody  = null;
+        ballState = 'idle';
+      }
       return;
     }
-    if (ballState === 'returning' && pos.y >= dotWorldY) {
-      Matter.Body.setPosition(ballBody, { x: dotWorldX, y: dotWorldY });
-      Matter.Body.setVelocity(ballBody, { x: 0, y: 0 });
-      Matter.Body.setStatic(ballBody, true);
-      ballState = 'ready';
+
+    // ── PHYSICS TICK ───────────────────────────────────────────────────
+    var delta = Math.min(now - lastTime, 32);
+    lastTime  = now;
+    if (delta > 0) Engine.update(engine, delta, delta / 16.667);
+
+    if (!ballBody || ballState !== 'falling') return;
+
+    var pos   = ballBody.position;
+    var bR    = ballBody.circleRadius;
+    var pageH = document.documentElement.scrollHeight;
+
+    if (pos.y > pageH + bR * 2) {
+      // Ball left the page — start return flight
+      World.remove(world, ballBody);
+      returnFromX = pos.x - window.scrollX;
+      returnFromY = -bR * 3;                         // start above top of viewport
+      returnStart = now;
+      ballState   = 'returning';
+      return;
     }
 
     var scrollY = window.scrollY;
