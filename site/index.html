@@ -319,9 +319,11 @@ window.addEventListener('load', function () {
   var ballBody    = null;
   var ballState   = 'idle';   // idle | falling | returning
   var ballRadius  = 0;
-  var returnStart = 0;   // 0 = not yet armed
+  var returnStart = 0;
   var returnFromX = 0;
   var returnFromY = 0;
+  var returnToX   = 0;
+  var returnToY   = 0;
 
   var dot = document.getElementById('logo-dot');
 
@@ -350,16 +352,15 @@ window.addEventListener('load', function () {
   function triggerReturn() {
     if (ballBody) { World.remove(world, ballBody); ballBody = null; }
     if (fallTimer) { clearTimeout(fallTimer); fallTimer = null; }
-    ballState = 'returning';
-    // Scroll to top so the hero is visible, then drop the ball
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Delay start until scroll has had time to begin
-    setTimeout(function () {
-      var dp  = getDotScreenPos();
-      returnFromX = dp.x;
-      returnFromY = -ballRadius * 4;   // above viewport
-      returnStart = performance.now();
-    }, 350);
+    // Instant scroll so dot position is stable before we capture it
+    window.scrollTo(0, 0);
+    var dp      = getDotScreenPos();
+    returnFromX = dp.x;
+    returnFromY = -ballRadius * 4;
+    returnToX   = dp.x;
+    returnToY   = dp.y;
+    returnStart = performance.now();
+    ballState   = 'returning';
   }
 
   dot.addEventListener('click', function () {
@@ -400,16 +401,11 @@ window.addEventListener('load', function () {
 
     // ── RETURN: fly back to A dot, fade out, restore SVG ───────────────
     if (ballState === 'returning') {
-      if (!returnStart) return;   // waiting for scroll + setTimeout to fire
       var DURATION = 520;
       var t    = Math.min((now - returnStart) / DURATION, 1);
-      var ease = 1 - Math.pow(1 - t, 3);            // ease-out cubic
-
-      var dp   = getDotScreenPos();
-      var curX = returnFromX + (dp.x - returnFromX) * ease;
-      var curY = returnFromY + (dp.y - returnFromY) * ease;
-
-      // Fade out over the last 35% so ball dissolves into the dot
+      var ease = 1 - Math.pow(1 - t, 3);
+      var curX = returnFromX + (returnToX - returnFromX) * ease;
+      var curY = returnFromY + (returnToY - returnFromY) * ease;
       var alpha = t > 0.65 ? Math.max(0, 1 - (t - 0.65) / 0.35) : 1;
       ctx.globalAlpha = alpha;
       ctx.beginPath();
@@ -417,11 +413,8 @@ window.addEventListener('load', function () {
       ctx.fillStyle = '#252523';
       ctx.fill();
       ctx.globalAlpha = 1;
-
       if (t >= 1) {
-        if (fallTimer) { clearTimeout(fallTimer); fallTimer = null; }
         dot.classList.remove('fired');
-        ballBody  = null;
         ballState = 'idle';
       }
       return;
