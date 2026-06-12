@@ -446,6 +446,18 @@ var SHEET = {
   josh:{down:[["wwwwwwwwwwwwwwww","....l..........w",".....KKKK......w","KKKKKllllKK....w","KllllllllllK...w","lKlllKllKlllK..w","lKKlKllKKlllK..w","KwKKKlKwwKKKwK.w","KwKwwwwwwwwKwK.w","KwlwwKwwKwwlwK.w","KKKwwKwwKwwKK..w","KwKKwwllwwKlK..w",".KKKKKKKKKKwK..w","...KwwKKKwwK...w","...KKKwwKwwK...w","...KllKKlKK....w"],["wwwwwwwwwwwwwwww","...l.lKKKK......",".KKKKKllllKK....",".KllllllllllK...","..KlllKllKlllK..","..KKlKllKKlllK..",".KwKKKlKwwKKKwK.",".KwKwwwwwwwwKwK.",".KwlwwKwwKwwlwK.","..KKwwKwwKwwKK..","..KKKwwdlwwKKK..",".KwwKKKKKKKKwwK.",".KwwKwKKKKwKwwK.","..KKKwwKKwwKKK..","...KlKwwwwKlK...","...KlllKKlllK..."],["wwwwwwwwwwwwwwww","...............l","......KKKK......","....KKllllKKKKK.","...Klllllllll.K.","..KlllKllKlllK..",".lKlllKKllKlKK..",".KwKKKwwKlKKKwK.",".KwKwwwwwwwwKwK.",".KwlwwKwwKwwlwK.","..KKwwKwwKwwKKK.","..KlKwwllwwKKwK.","..KwKKKKKKKKKK..","...KwwKKKwwK....","...KwwKwwKKK....","....KKlKKllK...."]],up:[["wwwwwwwwwwwwwwww","w........l......","w......KKKKl....","w....KKllllKKKKK","w...K.lllllllllK","w..KllllldllllK.","w..KlllllllllKK.","w.KwKlKlllllKKwK","w.KwKKllllllKKwK","w.KwlKKllllKKlwK","w.KKKwwKKKKwwKK.","w.KwKKKwwwwKKKK.","w..KKKwKKKKwKwwK","w...KKwwllwwKwwK","w....KKwwwwKKKK.","w....KlKKKK....."],["wwwwwwwwwwwwwwww","wl....lKKKKll..l","w....KKllllKKKKK","w...KllllllllllK","w..KllllllllllK.","w..KlllllllllKKl","w.KwKlKlldllKKwK","w.KwKKllllllKKwK","w.KwlKKKKKKKKlwK","w.KKKwKwwwwKwKK.","w.lKKKwKKKKwKKK.","w.KwKKwwllwwKKwK","w.KwKKKwwwwKKKwK","w..KKKwKKKKwKKK.","w...KlKwwwwKlK..","w...KlllKKlllK.."],["wwwwwwwwwwwwwwww",".w..............",".w......KKKK....",".w.KKKKKllllKK..",".w.KllllllllllK.",".w..KllllllllllK",".w..KKlllllllllK",".w.KwKKlllllKlKw",".w.KwKKllllllKKw","lw.KwlKKllllKKlw",".w..KKwwKKKKwwKK",".w..KKKKwwwwKKKw",".w.KwwKwKKKKwKKK",".w.KwwKwwllwwKK.",".w..KKKKwwwwKK..",".w......KKKKlK.."]],side:[["wwwwwwwwwwwwwwww",".w.....lKKKKl...",".wlKKKKKllllKK..",".w.KllllllllllK.",".w..KlllKllllllK",".w..KKlKlllllllK",".w...KKKKKKllllK",".w...KwKwwwlKKK.",".w...KwKwwwKwwK.",".w...KwwwwwwwKl.",".w....KlwwwKKwK.",".w.....KKKKKwwK.",".w......KKwwKwK.",".w......KKwwKwK.",".w.....KllKKKK..",".w.....KllllK..."],["wwwwwwwwwwwwwwww","..w.............","..w......KKKK...","..w.KKKKKllllKK.","..w.KllllllllllK","..w..KlllKllllll","..w..KKlKlllllll","..w...KKKKKKllll","..w...KwKwwwlKKK","..w...KwKwwwKwwK","..w...KwwwwwwwK.","..w....KlwwwKKwK","..w....lKKKKKKwK","..w...KKKKKKwwKK","..w..KllKllKwwKl","..w..lKllKKKKKll"],["wwwwwwwwwwwwwwww","..w.....lKKKKl..","..w....KKllllKKK","..w...Klllllllll","..w..KllllllKlll","..w..KlllllllKlK","..w..KllllKKKKKK","..w...KKKlwwwKwK","..w...KwwKwwwKwK","..w....KwwwwwwwK","..w...KwKKwwwlK.","..w...KwwKKKKK..","..w...KwKwwKK...","..w...KwKwwKK...","..w....KKKKllK..","..w.....KllllK.."]]},
 };
 
+/* The stock NPC sheet's lower body read like a wheelchair — splice the
+   player's legs (rows 9+) onto the NPC head/torso for every pose. */
+(function(){
+  var dirs=['down','up','side'];
+  for(var d=0;d<dirs.length;d++){
+    var nf=SHEET.npc[dirs[d]], rf=SHEET.red[dirs[d]];
+    for(var i=0;i<nf.length;i++){
+      nf[i]=nf[i].slice(0,9).concat(rf[i].slice(9));
+    }
+  }
+})();
+
 function tone4(ch,i,j){
   if(ch==='K') return INK;
   if(ch==='w') return PAPER;
@@ -524,8 +536,8 @@ function buildTown(){
   setT(m,13,16,'deadtree'); setT(m,17,16,'deadtree');   /* corner trees go decrepit too */
   setT(m,15,17,'sign'); m.signs.push({x:15,y:17,kind:'haunted'});
   // Josh James - blonde Head of Operations, greeting in the open near spawn
-  m.npcs.push({x:10,y:16,dir:'down',variant:'blonde',name:'JOSH JAMES',section:null,lines:[
-    'Josh James here - Head of Operations.',
+  m.npcs.push({x:10,y:16,dir:'down',variant:'blonde',name:'JOSH',section:null,lines:[
+    'Josh here - Head of Operations.',
     'New in town? Let me point you around Piecemakers City.',
     'NORTH-WEST: Piecemakers HQ - our story. (ABOUT)',
     'NORTH-EAST: The Workshop - what we do.',

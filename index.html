@@ -435,14 +435,20 @@ window.addEventListener('load', function () {
     frame.setAttribute('src', SRC_GAME);
     try { frame.contentWindow.focus(); } catch (err) {}
   }
+  var lastClose = 0;
   function closeGame() {
+    lastClose = Date.now();
     gb.classList.remove('playing');
     document.body.classList.remove('gb-lock');
     frame.setAttribute('src', SRC_BANNER);
     try { frame.blur(); window.focus(); } catch (err) {}
   }
 
-  cover.addEventListener('click', function (e) { e.preventDefault(); openGame(); });
+  cover.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (Date.now() - lastClose < 700) return;   /* swallow the ghost tap after exiting */
+    openGame();
+  });
 
   /* the game's START button becomes EXIT in-game and messages up to close */
   window.addEventListener('message', function (e) {
