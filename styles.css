@@ -49,8 +49,8 @@ body {
   background: var(--beige);
   color: var(--floppy);
   font-family: var(--body);
-  font-size: 17px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 img { display: block; max-width: 100%; }
@@ -218,7 +218,7 @@ a { color: inherit; }
 .dash-list li {
   position: relative;
   padding-left: 26px;
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   text-transform: uppercase;
   letter-spacing: 0.01em;
   max-width: 64ch;
