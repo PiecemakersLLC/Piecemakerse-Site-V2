@@ -80,7 +80,6 @@
         <button class="gb__cover" id="gbCover" type="button" aria-label="Click to play Piecemakers City">
           <span class="gb__hint">&#9654; Click to enter Piecemakers City</span>
         </button>
-        <button class="gb__exit" id="gbExit" type="button" aria-label="Exit game and return to site">&#10005; Exit</button>
       </div>
       <p class="gb__note">Click in to play &middot; click anywhere outside to keep browsing</p>
     </section>
@@ -428,7 +427,6 @@ window.addEventListener('load', function () {
   if (!gb || !cover || !frame) return;
 
   var SRC_GAME = 'game/index.html', SRC_BANNER = 'game/index.html?banner=1';
-  var exitBtn = document.getElementById('gbExit');
   var isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
   function openGame() {
@@ -445,7 +443,11 @@ window.addEventListener('load', function () {
   }
 
   cover.addEventListener('click', function (e) { e.preventDefault(); openGame(); });
-  exitBtn.addEventListener('click', function (e) { e.preventDefault(); closeGame(); });
+
+  /* the game's START button becomes EXIT in-game and messages up to close */
+  window.addEventListener('message', function (e) {
+    if (e.origin === location.origin && e.data === 'pm-exit') closeGame();
+  });
 
   /* desktop only: pointer-down outside the shell hands control back.
      On touch, scrolling counts as outside taps, so exit is the button instead. */

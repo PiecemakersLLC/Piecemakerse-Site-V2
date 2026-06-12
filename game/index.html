@@ -630,14 +630,19 @@ function tap(id,fn){ var el=document.getElementById(id); if(!el) return;
   el.addEventListener('pointerdown',function(e){e.preventDefault();fn();}); }
 tap('btnA',function(){ if(mode==='title'){startGame();return;} pressA(); });
 tap('btnB',function(){ pressB(); });
-tap('btnStart',function(){ if(mode==='title') startGame(); });
+tap('btnStart',function(){
+  if(mode==='title'){ startGame(); }
+  else if(EMBEDDED){ window.parent.postMessage('pm-exit','*'); }  /* hands control back to the site */
+});
 document.getElementById('title').addEventListener('pointerdown',function(e){ if(mode==='title'){ e.preventDefault(); startGame(); } });
 document.getElementById('choice').addEventListener('click',function(e){
   var o=e.target.closest('.opt'); if(!o) return; choiceSel=parseInt(o.getAttribute('data-i'),10); confirmChoice();
 });
 
 /* ============================== ACTIONS ============================== */
-function startGame(){ mode='play'; document.getElementById('title').classList.add('hide'); }
+var EMBEDDED = (window.parent !== window);
+function startGame(){ mode='play'; document.getElementById('title').classList.add('hide');
+  if(EMBEDDED){ var sb=document.getElementById('btnStart'); if(sb) sb.textContent='EXIT'; } }
 function curMap(){ return maps[cur]; }
 function opp(d){ return d==='up'?'down':d==='down'?'up':d==='left'?'right':'left'; }
 function pressA(){
