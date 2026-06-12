@@ -36,6 +36,7 @@
   .dlg__name{ position:absolute; top:-12px; left:6px; background:var(--ink); color:var(--paper);
     font-size:7px; padding:2px 6px; border-radius:2px; }
   .dlg__more{position:absolute; right:9px; bottom:6px; font-size:8px; animation:blink 1s steps(2) infinite;}
+  .dlg a{color:var(--ink); text-decoration:underline; pointer-events:auto;}
   @keyframes blink{50%{opacity:0;}}
   .choice{ position:absolute; right:6px; top:6px; background:var(--paper);
     border:3px solid var(--ink); border-radius:2px; padding:5px 8px 5px 6px;
@@ -157,10 +158,16 @@ function buildPatterns(){
   PAT.p50=makePat(2,2,[[0,0],[1,1]]);
   PAT.diag=makePat(4,4,[[0,3],[1,2],[2,1],[3,0]]);   /* 45-degree roof stripes */
   PAT.diag2=makePat(4,4,[[0,3],[1,2],[2,1],[3,0],[0,1],[1,0],[2,3],[3,2]]);
+  PAT.vert=makePat(4,4,[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]]); /* awning stripes */
+  PAT.horiz=makePat(4,4,[[0,1],[1,1],[2,1],[3,1]]);  /* thin horizontal banding */
+  PAT.check=makePat(4,4,[[0,0],[1,0],[0,1],[1,1],[2,2],[3,2],[2,3],[3,3]]); /* 2px checker */
 }
 
 /* ============================== TILE ART (2-tone, R/B style) ============================== */
-var BLOCKED = {tree:1, wall:1, wallwin:1, roofT:1, roofB:1, water:1, sign:1, shelf:1, counter:1, pc:1};
+var BLOCKED = {tree:1, wall:1, wallwin:1, roofT:1, roofB:1, water:1, sign:1, shelf:1, counter:1, pc:1, deadtree:1, dark:1};
+(function(){ var st=['lab','mart','gym','store','post'];
+  for(var i=0;i<st.length;i++){ BLOCKED['roofT_'+st[i]]=1; BLOCKED['roofB_'+st[i]]=1;
+    BLOCKED['wall_'+st[i]]=1; BLOCKED['wallwin_'+st[i]]=1; BLOCKED['emb_'+st[i]]=1; } })();
 var tileset = {};
 function mkTile(draw){ var c=document.createElement('canvas'); c.width=TILE; c.height=TILE; draw(c.getContext('2d')); return c; }
 function R(x,a,b,w,h,col){ x.fillStyle=col; x.fillRect(a,b,w,h); }
@@ -189,6 +196,18 @@ function buildTiles(){
     x.fillStyle=PAT.p50; x.fillRect(3,2,10,9);
     D(x,INK,[[6,4,1,1],[9,6,1,1],[5,8,1,1]]);
     R(x,7,11,2,4,INK);  // trunk
+  });
+  /* decrepit bare tree: skeletal branches, leaning trunk */
+  tileset.deadtree = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    D(x,INK,[[7,1,2,1],[4,2,1,1],[11,2,1,1],[5,3,1,1],[7,2,1,2],[10,3,1,1],
+             [2,4,2,1],[6,4,1,1],[8,4,1,2],[12,4,2,1],[4,5,2,1],[10,5,2,1],
+             [7,6,2,2],[6,8,1,1],[9,8,1,1],[7,8,2,5],[6,13,1,1],[5,14,2,1],[9,13,3,1],[11,12,1,1]]);
+  });
+  /* pitch-black haunted ground with faint glints */
+  tileset.dark = mkTile(function(x){
+    R(x,0,0,16,16,INK);
+    D(x,PAPER,[[3,4,1,1],[13,2,1,1],[9,7,1,1],[5,11,1,1],[12,13,1,1],[7,14,1,1]]);
   });
   tileset.water = mkTile(function(x){
     R(x,0,0,16,16,PAPER);
@@ -264,6 +283,153 @@ function buildTiles(){
     R(x,0,0,16,16,PAPER);
     R(x,2,4,12,8,INK); R(x,4,6,8,4,PAPER); R(x,7,7,2,2,INK);
   });
+
+  /* ---- per-building styles, each with its own vibe ---- */
+  function edge(x){ x.strokeStyle=INK; x.lineWidth=1; x.strokeRect(0.5,0.5,15,15); }
+  function plaque(x,icon){
+    R(x,0,0,16,16,PAPER);
+    R(x,1,1,14,14,INK); R(x,2,2,12,12,PAPER);
+    icon(x);
+  }
+
+  /* LAB (HQ): flat parapet roof + portholes, research-lab vibe */
+  tileset.roofT_lab = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    x.fillStyle=PAT.horiz; x.fillRect(0,3,16,13);
+    R(x,0,0,16,3,INK);                    /* parapet cap */
+    edge(x);
+  });
+  tileset.roofB_lab = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    x.fillStyle=PAT.horiz; x.fillRect(0,0,16,16);
+    edge(x); R(x,0,13,16,3,INK);
+  });
+  tileset.wall_lab = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    D(x,INK,[[3,4,1,1],[9,2,1,1],[13,6,1,1],[5,10,1,1],[11,12,1,1],[2,13,1,1]]); /* stucco specks */
+    edge(x);
+  });
+  tileset.wallwin_lab = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    /* octagonal porthole window */
+    D(x,INK,[[6,2,4,1],[4,3,2,1],[10,3,2,1],[3,4,1,4],[12,4,1,4],[4,8,2,1],[10,8,2,1],[6,9,4,1]]);
+    D(x,INK,[[6,4,1,1],[7,5,1,1]]);       /* shine */
+    D(x,INK,[[2,13,1,1],[13,12,1,1]]);
+    edge(x);
+  });
+  tileset.emb_lab = mkTile(function(x){ plaque(x,function(x){ /* flask */
+    D(x,INK,[[6,3,4,1],[7,4,1,3],[8,4,1,3],[5,7,2,1],[9,7,2,1],[4,8,1,3],[11,8,1,3],[5,10,6,2]]);
+  }); });
+
+  /* MART (Workshop): striped awning, corner-mart vibe */
+  tileset.roofT_mart = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    x.fillStyle=PAT.vert; x.fillRect(0,0,16,16);
+    edge(x);
+  });
+  tileset.roofB_mart = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    x.fillStyle=PAT.vert; x.fillRect(0,0,16,12);
+    D(x,INK,[[0,12,16,1],[0,13,3,2],[5,13,3,2],[10,13,3,2],[14,13,2,2]]); /* scalloped hem */
+    edge(x);
+  });
+  tileset.wall_mart = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    D(x,INK,[[0,2,16,1],[0,5,16,1]]);     /* fascia bands */
+    edge(x);
+  });
+  tileset.wallwin_mart = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    R(x,1,3,14,9,INK); R(x,2,4,12,7,PAPER);   /* wide display window */
+    D(x,INK,[[8,4,1,7],[3,5,1,1],[4,6,1,1],[10,5,1,1],[11,6,1,1]]);
+    edge(x);
+  });
+  tileset.emb_mart = mkTile(function(x){ plaque(x,function(x){ /* big M */
+    D(x,INK,[[4,4,2,8],[10,4,2,8],[6,5,1,2],[9,5,1,2],[7,6,2,2]]);
+  }); });
+
+  /* GYM (Proving Grounds): battlements + stone, fortress-gym vibe */
+  tileset.roofT_gym = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    x.fillStyle=PAT.p50; x.fillRect(0,4,16,12);
+    R(x,0,0,16,4,INK); R(x,3,0,3,3,PAPER); R(x,10,0,3,3,PAPER); /* battlements */
+    edge(x);
+  });
+  tileset.roofB_gym = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    x.fillStyle=PAT.p50; x.fillRect(0,0,16,16);
+    edge(x); R(x,0,13,16,3,INK);
+  });
+  tileset.wall_gym = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    D(x,INK,[[0,5,16,1],[0,10,16,1],[7,0,1,5],[3,5,1,5],[11,5,1,5],[7,10,1,6]]); /* big stone blocks */
+    edge(x);
+  });
+  tileset.wallwin_gym = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    D(x,INK,[[0,5,16,1],[0,10,16,1]]);
+    R(x,4,2,2,8,INK); R(x,10,2,2,8,INK);  /* twin arrow slits */
+    edge(x);
+  });
+  tileset.emb_gym = mkTile(function(x){ plaque(x,function(x){ /* badge */
+    D(x,INK,[[7,3,2,1],[6,4,4,1],[5,5,6,1],[4,6,8,1],[4,7,8,1],[5,8,6,1],[6,9,4,1],[7,10,2,1]]);
+    R(x,7,6,2,2,PAPER);
+  }); });
+
+  /* STORE (Merch Mart): checker fascia + tee in the window, dept-store vibe */
+  tileset.roofT_store = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    x.fillStyle=PAT.check; x.fillRect(0,0,16,16);
+    edge(x);
+  });
+  tileset.roofB_store = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    x.fillStyle=PAT.check; x.fillRect(0,0,16,13);
+    edge(x); R(x,0,13,16,3,INK);
+  });
+  tileset.wall_store = mkTile(brick);
+  tileset.wallwin_store = mkTile(function(x){
+    brick(x);
+    R(x,2,2,12,11,INK); R(x,3,3,10,9,PAPER);  /* display window */
+    D(x,INK,[[4,4,8,1],[5,6,6,1],[4,7,2,1],[10,7,2,1],[6,7,4,4]]); /* tee on a rail */
+  });
+  tileset.emb_store = mkTile(function(x){ plaque(x,function(x){ /* tee */
+    D(x,INK,[[4,4,8,1],[3,5,10,2],[5,7,6,5]]);
+    R(x,7,4,2,1,PAPER);
+  }); });
+
+  /* POST (Contact): shingled cottage roof, friendly-center vibe */
+  function shingle(x,eave){
+    R(x,0,0,16,16,PAPER);
+    for(var ry=0;ry<16;ry+=4){
+      var off=((ry/4)%2)?4:0;
+      for(var cx=-8+off;cx<16;cx+=8){
+        D(x,INK,[[cx+1,ry+3,6,1],[cx,ry+2,1,1],[cx+7,ry+2,1,1]]);
+      }
+    }
+    edge(x);
+    if(eave) R(x,0,13,16,3,INK);
+  }
+  tileset.roofT_post = mkTile(function(x){ shingle(x,false); });
+  tileset.roofB_post = mkTile(function(x){ shingle(x,true); });
+  tileset.wall_post = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    D(x,INK,[[3,0,1,16],[7,0,1,16],[11,0,1,16]]);  /* plank seams */
+    D(x,INK,[[5,3,1,1],[9,7,1,1],[13,4,1,1],[1,9,1,1],[5,12,1,1],[13,12,1,1]]); /* nails */
+    edge(x);
+  });
+  tileset.wallwin_post = mkTile(function(x){
+    R(x,0,0,16,16,PAPER);
+    D(x,INK,[[3,0,1,2],[7,0,1,2],[11,0,1,2],[3,13,1,3],[7,13,1,3],[11,13,1,3]]);
+    R(x,3,2,10,10,INK); R(x,4,3,8,8,PAPER);    /* window */
+    D(x,INK,[[5,5,6,4]]); R(x,6,6,4,2,PAPER);  /* envelope */
+    D(x,INK,[[6,6,1,1],[9,6,1,1],[7,7,2,1]]);  /* flap */
+    edge(x);
+  });
+  tileset.emb_post = mkTile(function(x){ plaque(x,function(x){ /* envelope */
+    R(x,4,5,8,6,INK); R(x,5,6,6,4,PAPER);
+    D(x,INK,[[5,6,1,1],[10,6,1,1],[6,7,1,1],[9,7,1,1],[7,8,2,1]]);
+  }); });
 }
 
 /* ============================== CHARACTERS (Gen-1 style sprite grids) ============================== */
@@ -281,12 +447,17 @@ function tone4(ch,i,j){
   if(ch==='l') return (i%2===0&&j%2===0)?INK:PAPER;   /* light gray ~25% */
   return null;
 }
+/* Characters render 14px wide (source cols 4 & 11 dropped, re-centered),
+   giving them slimmer, original proportions distinct from any stock sprite sheet. */
+var SLIMW=14;
 function drawFrame(px,py,grid,mirror){
   for(var j=0;j<16;j++){ var row=grid[j];
-    for(var i=0;i<16;i++){ var ch = mirror?row[15-i]:row[i];
+    for(var i=0;i<SLIMW;i++){
+      var si=Math.round(i*15/(SLIMW-1));
+      var ch = mirror?row[15-si]:row[si];
       if(ch==='.') continue;
       var col=tone4(ch,i,j); if(col===null) continue;
-      ctx.fillStyle=col; ctx.fillRect(px+i,py+j,1,1);
+      ctx.fillStyle=col; ctx.fillRect(px+i+1,py+j,1,1);
     } }
 }
 function drawChar(px,py,dir,frame,variant){
@@ -308,37 +479,46 @@ function blankMap(w,h,fill){ var g=[],b=[];
 function setT(m,x,y,key){ if(y<0||y>=m.h||x<0||x>=m.w) return; m.grid[y][x]=key; m.block[y][x]=BLOCKED[key]?1:0; }
 function fillRectT(m,x0,y0,w,h,key){ for(var y=y0;y<y0+h;y++) for(var x=x0;x<x0+w;x++) setT(m,x,y,key); }
 
-/* 4 wide x 4 tall building: 2 roof rows, window-wall row, base-wall row w/ door */
-function placeBuilding(m,x,y,target,label){
-  fillRectT(m,x,y,4,1,'roofT');
-  fillRectT(m,x,y+1,4,1,'roofB');
-  fillRectT(m,x,y+2,4,1,'wallwin');
-  fillRectT(m,x,y+3,4,1,'wall');
-  var dx=x+1, dy=y+3; setT(m,dx,dy,'door');
-  var sx=x+2, sy=y+4; setT(m,sx,sy,'sign');
+/* Building: 2 roof rows, window-wall row, wall row(s) w/ door. Default 4x4;
+   w/h vary the footprint. Style gives each its own tiles + a plaque over the door. */
+function placeBuilding(m,x,y,target,label,style,w,h,signLeft){
+  w=w||4; h=h||4;
+  var sfx = style ? '_'+style : '';
+  fillRectT(m,x,y,w,1,'roofT'+sfx);
+  fillRectT(m,x,y+1,w,1,'roofB'+sfx);
+  fillRectT(m,x,y+2,w,1,'wallwin'+sfx);
+  for(var r=y+3;r<y+h;r++) fillRectT(m,x,r,w,1,'wall'+sfx);
+  var dx=x+((w-1)>>1), dy=y+h-1; setT(m,dx,dy,'door');
+  if(style) setT(m,dx,dy-1,'emb_'+style);   /* plaque hung over the door */
+  var sx=signLeft?dx-1:dx+1, sy=dy+1; setT(m,sx,sy,'sign');
   m.signs.push({x:sx,y:sy,label:label,kind:'building'});
   m.warps.push({x:dx,y:dy,to:target});
 }
 
 function buildTown(){
-  var W=20,H=18, m=blankMap(W,H,'grass'); maps.town=m;
+  var W=20,H=20, m=blankMap(W,H,'grass'); maps.town=m;
   for(var x=0;x<W;x++){ setT(m,x,0,'tree'); setT(m,x,H-1,'tree'); }
   for(var y=0;y<H;y++){ setT(m,0,y,'tree'); setT(m,W-1,y,'tree'); }
-  placeBuilding(m,3,1,'about','ABOUT - PIECEMAKERS HQ');
-  placeBuilding(m,13,1,'whatwedo','WHAT WE DO - THE WORKSHOP');
-  placeBuilding(m,3,7,'why','WHY WE ARE GREAT - PROVING GROUNDS');
-  placeBuilding(m,13,7,'work','WORK - THE MERCH MART');
-  placeBuilding(m,3,12,'contact','CONTACT - POST OFFICE');
+  placeBuilding(m,3,1,'about','ABOUT - PIECEMAKERS HQ','lab');
+  placeBuilding(m,13,1,'whatwedo','WHAT WE DO - THE WORKSHOP','mart');
+  placeBuilding(m,3,7,'why','WHY WE ARE GREAT - PROVING GROUNDS','gym',5,5);  /* big fortress gym */
+  placeBuilding(m,13,7,'work','WORK - THE MERCH MART','store',6,4);           /* wide dept store */
+  placeBuilding(m,3,14,'contact','CONTACT - POST OFFICE','post',4,4,true);
   // scenery in the open lower-right: pond + trees
-  fillRectT(m,14,13,3,2,'water');
-  setT(m,13,12,'tree'); setT(m,17,12,'tree'); setT(m,13,15,'tree'); setT(m,17,15,'tree');
+  fillRectT(m,14,14,3,2,'water');
+  setT(m,13,13,'tree'); setT(m,17,13,'tree'); setT(m,13,16,'tree'); setT(m,17,16,'tree');
   // decorative flowers/trees in open spaces
   setT(m,8,3,'flower'); setT(m,11,3,'flower'); setT(m,8,9,'tree'); setT(m,11,9,'tree');
-  setT(m,8,12,'flower'); setT(m,11,12,'flower');
+  setT(m,8,13,'flower'); setT(m,11,13,'flower');
   // welcome sign near the gate
-  setT(m,12,16,'sign'); m.signs.push({x:12,y:16,label:'WELCOME',kind:'welcome'});
+  setT(m,12,18,'sign'); m.signs.push({x:12,y:18,label:'WELCOME',kind:'welcome'});
+  // haunted fake exit, bottom-right: dark blocked path + decrepit trees + warning sign
+  setT(m,15,18,'dark'); setT(m,15,19,'dark');
+  setT(m,14,18,'deadtree'); setT(m,16,18,'deadtree');
+  setT(m,13,16,'deadtree'); setT(m,17,16,'deadtree');   /* corner trees go decrepit too */
+  setT(m,15,17,'sign'); m.signs.push({x:15,y:17,kind:'haunted'});
   // Josh James - blonde Head of Operations, greeting in the open near spawn
-  m.npcs.push({x:10,y:14,dir:'down',variant:'blonde',name:'JOSH JAMES',section:null,lines:[
+  m.npcs.push({x:10,y:16,dir:'down',variant:'blonde',name:'JOSH JAMES',section:null,lines:[
     'Josh James here - Head of Operations.',
     'New in town? Let me point you around Piecemakers City.',
     'NORTH-WEST: Piecemakers HQ - our story. (ABOUT)',
@@ -348,21 +528,24 @@ function buildTown(){
     'SOUTH-WEST: The Post Office - get in touch.',
     'Walk into any building and talk to the local. I run point on all of it.'
   ]});
-  m.spawn={x:10,y:16,dir:'up'};
+  m.spawn={x:10,y:18,dir:'up'};
 }
 
-function buildInterior(key,npc){
-  var W=9,H=8, m=blankMap(W,H,'floor'); maps[key]=m;
+/* Interior room. spec varies size, furniture, NPC spot:
+   {w,h, f:[[x,y,tile],...], npc:[x,y,dir], ex:exitX, spawn:{x,y,dir}} */
+function buildInterior(key,npc,spec){
+  spec=spec||{};
+  var W=spec.w||9, H=spec.h||8, m=blankMap(W,H,'floor'); maps[key]=m;
   for(var x=0;x<W;x++){ setT(m,x,0,'wall'); }
   for(var y=0;y<H;y++){ setT(m,0,y,'wall'); setT(m,W-1,y,'wall'); }
   fillRectT(m,1,1,W-2,1,'wall');
-  setT(m,2,1,'shelf'); setT(m,6,1,'pc');
-  setT(m,6,2,'counter');
-  setT(m,4,4,'rug');
-  var ex=4, ey=H-1; setT(m,ex,ey,'mat');
+  var f=spec.f||[[2,1,'shelf'],[6,1,'pc'],[6,2,'counter'],[4,4,'rug']];
+  for(var i=0;i<f.length;i++) setT(m,f[i][0],f[i][1],f[i][2]);
+  var ex=(spec.ex!=null)?spec.ex:(W>>1), ey=H-1; setT(m,ex,ey,'mat');
   m.warps.push({x:ex,y:ey,to:'town', backTo:key});
-  m.npcs.push({x:4,y:2,dir:'down',name:npc.name,lines:npc.lines,section:key,variant:'npc'});
-  m.spawn={x:4,y:5,dir:'up'};
+  var np=spec.npc||[W>>1,2,'down'];
+  m.npcs.push({x:np[0],y:np[1],dir:np[2]||'down',name:npc.name,lines:npc.lines,section:key,variant:'npc'});
+  m.spawn=spec.spawn||{x:ex,y:ey-2,dir:'up'};
 }
 
 /* ============================== CONTENT ============================== */
@@ -387,7 +570,10 @@ var SECTIONS = {
       '<li class="them">No transparency</li><li class="them">Own merch rights across the board</li>'+
       '<li class="them">High admin fees</li><li class="them">Net profit splits</li></ul>'},
   work:{ title:'WORK',
-    body:'<h3>Work</h3><p>Our team of highly skilled designers create iconic and cohesive merch lines that speak to your audience, increasing revenue. Our high quality manufacturing leaves lasting impressions on your fans.</p>'},
+    body:'<h3>Work</h3><p>Our team of highly skilled designers create iconic and cohesive merch lines that speak to your audience, increasing revenue. Our high quality manufacturing leaves lasting impressions on your fans.</p>'+
+      '<h4>SHOP CLIENT STORES</h4>'+
+      '<p><a href="https://shop.jid.world/" target="_blank" rel="noopener">JID OFFICIAL STORE &raquo;</a></p>'+
+      '<p><a href="https://mariahthescientist.shop/" target="_blank" rel="noopener">MARIAH THE SCIENTIST STORE &raquo;</a></p>'},
   contact:{ title:'CONTACT',
     body:'<h3>Contact</h3><p>Our team of industry veterans brings over 45 years of combined experience in merchandise. Build artists&rsquo; worlds and make fans happy, without the inflated price tag.</p>'+
       '<p><a href="mailto:info@piecemakers.cc">Email us at info@piecemakers.cc &raquo;</a></p>'}
@@ -397,7 +583,8 @@ var NPCS = {
   about:{name:'CURTIS', lines:['Welcome to Piecemakers HQ!','Our crew has 45+ years building merch for the biggest names in music.','We build artists&rsquo; worlds - minus the inflated price tag.']},
   whatwedo:{name:'DESIGNER', lines:['Step into the Workshop.','Boutique world-building, white-glove service, zero hidden fees.','Flexible deals, full transparency - and you keep your rights.']},
   why:{name:'CHAMP', lines:['This is the Proving Grounds.','Us vs. them: lower costs, real transparency, no profit splits.','Wanna see the full tale of the tape?']},
-  work:{name:'SHOPKEEPER', lines:['Welcome to the Merch Mart!','We make iconic lines that move units and stick with fans.','Browse the racks - pick your artist.']},
+  work:{name:'SHOPKEEPER', lines:['Welcome to the Merch Mart!','We make iconic lines that move units and stick with fans.',
+    'Hit a client store:<br><a href="https://shop.jid.world/" target="_blank" rel="noopener">&raquo; JID OFFICIAL STORE</a><br><a href="https://mariahthescientist.shop/" target="_blank" rel="noopener">&raquo; MARIAH THE SCIENTIST</a>']},
   contact:{name:'CLERK', lines:['Piecemakers Post Office.','Got a project? We&rsquo;d love to hear about it.','Send word to info@piecemakers.cc.']}
 };
 
@@ -456,6 +643,7 @@ function pressA(){
 function pressB(){
   if(mode==='panel'){ closePanel(); return; }
   if(mode==='choice'){ closeDialogue(); return; }
+  if(mode==='dialogue'){ closeDialogue(); return; }   /* bail out of dialogue anytime */
 }
 function interact(){
   var m=curMap(), fx=player.x, fy=player.y;
@@ -463,6 +651,10 @@ function interact(){
   for(var i=0;i<m.npcs.length;i++){ var n=m.npcs[i]; if(n.x===fx&&n.y===fy){ n.dir=opp(player.dir); openDialogue(n.name,n.lines,n.section); return; } }
   for(var j=0;j<m.signs.length;j++){ var s=m.signs[j]; if(s.x===fx&&s.y===fy){
     if(s.kind==='welcome') openDialogue(WELCOME.name,WELCOME.lines,null);
+    else if(s.kind==='haunted') openDialogue('OMINOUS SIGN',[
+      'THIS WAY TO OTHER MERCH COMPANIES, AND THEIR SHENANIGANS.',
+      'The path is pitch black. Somewhere in the dark, hidden fees are howling.',
+      'You decide not to go in.'],null);
     else openDialogue('SIGN',[s.label,'Step inside and talk to the local for the full story.'],null);
     return; } }
 }
@@ -472,7 +664,8 @@ function openDialogue(name,lines,section){
   document.getElementById('choice').classList.remove('show');
   setLine(lines[0]); document.getElementById('dlg').classList.add('show');
 }
-function setLine(html){ dlg.full=html; dlg.shown=0; dlg.t=0; renderLine(); }
+/* lines containing markup render instantly so the typewriter never splits a tag */
+function setLine(html){ dlg.full=html; dlg.shown=(html.indexOf('<')>=0)?html.length:0; dlg.t=0; renderLine(); }
 function renderLine(){
   document.getElementById('dlgText').innerHTML=dlg.full.substring(0,dlg.shown);
   document.getElementById('dlgMore').style.display=(dlg.shown>=dlg.full.length)?'block':'none';
@@ -568,8 +761,28 @@ function loop(ts){
 
 /* ============================== BOOT ============================== */
 buildPatterns(); buildTiles(); buildTown();
-buildInterior('about',NPCS.about); buildInterior('whatwedo',NPCS.whatwedo);
-buildInterior('why',NPCS.why); buildInterior('work',NPCS.work); buildInterior('contact',NPCS.contact);
+/* HQ lab: wide room, twin terminals, bench row */
+buildInterior('about',NPCS.about,{w:10,h:8,
+  f:[[3,1,'pc'],[6,1,'pc'],[8,1,'shelf'],[2,3,'counter'],[3,3,'counter'],[6,3,'counter'],[7,3,'counter']],
+  npc:[5,4,'down']});
+/* Workshop mart: shelf aisles, counter by the door */
+buildInterior('whatwedo',NPCS.whatwedo,{
+  f:[[2,1,'shelf'],[3,1,'shelf'],[6,1,'pc'],[1,2,'counter'],[2,4,'shelf'],[3,4,'shelf'],[5,4,'shelf'],[6,4,'shelf']],
+  npc:[2,2,'right']});
+/* Proving Grounds gym: long hall, rug runway up to the champ */
+buildInterior('why',NPCS.why,{w:8,h:11,
+  f:[[2,1,'shelf'],[5,1,'shelf'],[3,3,'rug'],[4,3,'rug'],[3,5,'rug'],[4,5,'rug'],[3,7,'rug'],[4,7,'rug'],[1,4,'shelf'],[6,4,'shelf'],[1,7,'shelf'],[6,7,'shelf']],
+  npc:[4,2,'down']});
+/* Merch Mart: wide floor, rack rows, shopkeeper at the counter */
+buildInterior('work',NPCS.work,{w:11,h:8,
+  f:[[2,1,'shelf'],[3,1,'shelf'],[7,1,'shelf'],[8,1,'shelf'],[9,1,'pc'],[5,2,'counter'],
+     [2,3,'shelf'],[3,3,'shelf'],[7,3,'shelf'],[8,3,'shelf'],
+     [2,5,'shelf'],[3,5,'shelf'],[7,5,'shelf'],[8,5,'shelf']],
+  npc:[5,3,'down']});
+/* Post office: cozy room, counter row, clerk at the end */
+buildInterior('contact',NPCS.contact,{w:8,h:7,
+  f:[[2,1,'shelf'],[5,1,'pc'],[2,2,'counter'],[3,2,'counter'],[4,2,'counter'],[3,4,'rug']],
+  npc:[5,2,'left']});
 player.x=maps.town.spawn.x; player.y=maps.town.spawn.y; player.dir=maps.town.spawn.dir; snapPlayer();
 requestAnimationFrame(loop);
 

@@ -73,6 +73,17 @@
       </svg>
     </section>
 
+    <!-- PIECEMAKERS CITY — playable inline; click to enter, click anywhere outside to leave -->
+    <section id="city" class="game-embed" aria-label="Piecemakers City game">
+      <div class="gb" id="gb">
+        <iframe id="gbFrame" src="game/index.html" title="Piecemakers City &mdash; a playable merch world" loading="lazy"></iframe>
+        <button class="gb__cover" id="gbCover" type="button" aria-label="Click to play Piecemakers City">
+          <span class="gb__hint">&#9654; Click to enter Piecemakers City</span>
+        </button>
+      </div>
+      <p class="gb__note">Click in to play &middot; click anywhere outside to keep browsing</p>
+    </section>
+
     <!-- ABOUT -->
     <section id="about" class="block">
       <div class="label-rule">
@@ -405,6 +416,30 @@ window.addEventListener('load', function () {
   }
   requestAnimationFrame(loop);
 });
+</script>
+
+<!-- Piecemakers City embed: click to activate, click outside to deactivate -->
+<script>
+(function () {
+  var gb    = document.getElementById('gb');
+  var cover = document.getElementById('gbCover');
+  var frame = document.getElementById('gbFrame');
+  if (!gb || !cover || !frame) return;
+
+  cover.addEventListener('click', function (e) {
+    e.preventDefault();
+    gb.classList.add('playing');
+    try { frame.contentWindow.focus(); } catch (err) {}
+  });
+
+  /* any pointer-down on the page outside the game shell hands control back */
+  document.addEventListener('pointerdown', function (e) {
+    if (!gb.classList.contains('playing')) return;
+    if (gb.contains(e.target)) return;
+    gb.classList.remove('playing');
+    try { frame.blur(); window.focus(); } catch (err) {}
+  }, true);
+})();
 </script>
 </body>
 </html>
