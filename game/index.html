@@ -78,7 +78,7 @@
   .ab button{ width:42px; height:42px; border-radius:50%; font-size:12px;}
   .startbtn{ padding:6px 12px; font-size:8px;}
   .touch button:active{ background:var(--ink); color:var(--paper);}
-  .touch button{ touch-action:none; }
+  .touch button{ touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
   .panel__body{ touch-action:pan-y; }
   /* banner mode (?banner=1): bare full-bleed canvas strip for the site marquee */
   body.banner{ display:block; overflow:hidden; }
@@ -129,11 +129,11 @@
   </div>
   <div class="touch">
     <div class="pad">
-      <button class="u" data-dir="up">&#9650;</button>
-      <button class="l" data-dir="left">&#9664;</button>
+      <button class="u" data-dir="up" aria-label="up"></button>
+      <button class="l" data-dir="left" aria-label="left"></button>
       <span class="sp"></span>
-      <button class="r" data-dir="right">&#9654;</button>
-      <button class="d" data-dir="down">&#9660;</button>
+      <button class="r" data-dir="right" aria-label="right"></button>
+      <button class="d" data-dir="down" aria-label="down"></button>
     </div>
     <button class="startbtn" id="btnStart">START</button>
     <div class="ab"><button id="btnB">B</button><button id="btnA">A</button></div>
