@@ -76,7 +76,7 @@
     <!-- PIECEMAKERS CITY — playable inline; click to enter, click anywhere outside to leave -->
     <section id="city" class="game-embed" aria-label="Piecemakers City game">
       <div class="gb" id="gb">
-        <iframe id="gbFrame" src="game/index.html" title="Piecemakers City &mdash; a playable merch world" loading="lazy"></iframe>
+        <iframe id="gbFrame" src="game/index.html?banner=1" title="Piecemakers City &mdash; a playable merch world" loading="lazy"></iframe>
         <button class="gb__cover" id="gbCover" type="button" aria-label="Click to play Piecemakers City">
           <span class="gb__hint">&#9654; Click to enter Piecemakers City</span>
         </button>
@@ -426,9 +426,12 @@ window.addEventListener('load', function () {
   var frame = document.getElementById('gbFrame');
   if (!gb || !cover || !frame) return;
 
+  var SRC_GAME = 'game/index.html', SRC_BANNER = 'game/index.html?banner=1';
+
   cover.addEventListener('click', function (e) {
     e.preventDefault();
     gb.classList.add('playing');
+    frame.setAttribute('src', SRC_GAME);          /* swap marquee for the real game */
     try { frame.contentWindow.focus(); } catch (err) {}
   });
 
@@ -437,6 +440,7 @@ window.addEventListener('load', function () {
     if (!gb.classList.contains('playing')) return;
     if (gb.contains(e.target)) return;
     gb.classList.remove('playing');
+    frame.setAttribute('src', SRC_BANNER);        /* back to the walking marquee */
     try { frame.blur(); window.focus(); } catch (err) {}
   }, true);
 })();

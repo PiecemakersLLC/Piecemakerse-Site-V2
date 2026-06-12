@@ -80,6 +80,12 @@
   .touch button:active{ background:var(--ink); color:var(--paper);}
   .touch button{ touch-action:none; }
   .panel__body{ touch-action:pan-y; }
+  /* banner mode (?banner=1): bare full-bleed canvas strip for the site marquee */
+  body.banner{ display:block; overflow:hidden; }
+  body.banner .wrap{ display:block; padding:0; gap:0; max-height:none; }
+  body.banner .screen{ position:fixed; inset:0; width:auto; aspect-ratio:auto;
+    border:none; box-shadow:none; border-radius:0; }
+  body.banner .legend, body.banner .touch, body.banner .title{ display:none !important; }
   @media (hover:none),(pointer:coarse){
     .touch{display:flex;}
     .legend{display:none;}
@@ -759,8 +765,77 @@ function loop(ts){
   render(); requestAnimationFrame(loop);
 }
 
+/* ============================== BANNER MODE ============================== */
+/* Side-scrolling marquee: the player walks right past Piecemakers City scenery.
+   36 logical px tall, scaled 2x by CSS; scenery loops seamlessly. */
+function startBanner(){
+  document.body.classList.add('banner');
+  var H=36, SCALE=2, SPEED=22;
+  function fit(){
+    var w=Math.max(60,Math.ceil(cvs.clientWidth/SCALE));
+    cvs.width=w; cvs.height=H; ctx.imageSmoothingEnabled=false;
+  }
+  window.addEventListener('resize',fit);
+  /* parade items laid out on a looping world strip */
+  var items=[], cx=0;
+  function add(kind,key,w){ items.push({kind:kind,key:key,x:cx,w:w}); cx+=w; }
+  function gap(g){ cx+=g; }
+  add('tile','tree',16);     gap(26);
+  add('tile','flower',16);   gap(34);
+  add('bldg','lab',64);      gap(46);
+  add('tile','sign',16);     gap(28);
+  add('tile','tree',16);     gap(40);
+  add('bldg','mart',64);     gap(46);
+  add('tile','flower',16);   gap(26);
+  add('bldg','gym',80);      gap(52);
+  add('tile','tree',16);     gap(30);
+  add('bldg','store',96);    gap(50);
+  add('tile','deadtree',16); gap(22);
+  add('tile','deadtree',16); gap(46);
+  add('bldg','post',64);     gap(40);
+  add('tile','tree',16);     gap(60);
+  var L=cx;
+  function drawBldg(st,px,w){
+    var n=w/16, dx=((n-1)>>1);
+    for(var i=0;i<n;i++){
+      ctx.drawImage(tileset['roofB_'+st],px+i*16,0);
+      ctx.drawImage(tileset[i===dx?'door':('wall_'+st)],px+i*16,16);
+    }
+  }
+  var s=0, wt=0, ci=0, CYC=[0,1,0,2], last=0;
+  function bl(ts){
+    var dt=(ts-last)/1000; if(dt>0.05)dt=0.05; last=ts;
+    s=(s+SPEED*dt)%L;
+    wt+=dt; if(wt>0.14){ wt=0; ci=(ci+1)%4; }
+    var w=cvs.width;
+    ctx.fillStyle=PAPER; ctx.fillRect(0,0,w,H);
+    /* ground dashes scrolling underfoot */
+    ctx.fillStyle=INK;
+    for(var gx=-(Math.floor(s)%10); gx<w; gx+=10){ ctx.fillRect(gx,33,4,1); }
+    /* scenery, drawn across loop seams */
+    for(var r=0;r<3;r++){
+      var off=r*L-s;
+      for(var i=0;i<items.length;i++){
+        var it=items[i], px=Math.round(it.x+off);
+        if(px+it.w<0||px>w) continue;
+        if(it.kind==='bldg') drawBldg(it.key,px,it.w);
+        else ctx.drawImage(tileset[it.key],px,16);
+      }
+    }
+    /* the walker */
+    drawChar(Math.round(w*0.22),16,'right',CYC[ci],'player');
+    requestAnimationFrame(bl);
+  }
+  fit();
+  requestAnimationFrame(bl);
+}
+
 /* ============================== BOOT ============================== */
-buildPatterns(); buildTiles(); buildTown();
+buildPatterns(); buildTiles();
+if(/[?&]banner=1/.test(location.search)){
+  startBanner();
+} else {
+buildTown();
 /* HQ lab: wide room, twin terminals, bench row */
 buildInterior('about',NPCS.about,{w:10,h:8,
   f:[[3,1,'pc'],[6,1,'pc'],[8,1,'shelf'],[2,3,'counter'],[3,3,'counter'],[6,3,'counter'],[7,3,'counter']],
@@ -785,6 +860,7 @@ buildInterior('contact',NPCS.contact,{w:8,h:7,
   npc:[5,2,'left']});
 player.x=maps.town.spawn.x; player.y=maps.town.spawn.y; player.dir=maps.town.spawn.dir; snapPlayer();
 requestAnimationFrame(loop);
+}
 
 })();
 </script>
