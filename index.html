@@ -16,6 +16,30 @@
     width: 100vw; height: 100vh;
     pointer-events: none; z-index: 200;
   }
+
+  /* --- Section scroll-reveal --- */
+  .block.collapsible .rule {
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .block.collapsible.revealed .rule {
+    transform: scaleX(1);
+  }
+  .block.collapsible .block__body {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    margin-top: 0;
+    transition:
+      max-height 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s,
+      opacity    0.6s ease 0.38s,
+      margin-top 0.5s ease 0.2s;
+  }
+  .block.collapsible.revealed .block__body {
+    opacity: 1;
+    margin-top: 22px;
+  }
 </style>
 </head>
 <body>
@@ -415,6 +439,39 @@ window.addEventListener('load', function () {
     ctx.fill();
   }
   requestAnimationFrame(loop);
+});
+</script>
+
+<script>
+// --- Section scroll-reveal ---
+window.addEventListener('DOMContentLoaded', function () {
+  var blocks = document.querySelectorAll('.block');
+  var heights = new Map();
+
+  // Measure natural heights before collapsing
+  blocks.forEach(function (block) {
+    var body = block.querySelector('.block__body');
+    if (body) heights.set(block, body.scrollHeight);
+  });
+
+  // Collapse all sections
+  blocks.forEach(function (block) {
+    block.classList.add('collapsible');
+  });
+
+  // Reveal on scroll
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      var block = entry.target;
+      var body = block.querySelector('.block__body');
+      if (body) body.style.maxHeight = (heights.get(block) || 3000) + 'px';
+      block.classList.add('revealed');
+      io.unobserve(block);
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+  blocks.forEach(function (block) { io.observe(block); });
 });
 </script>
 
