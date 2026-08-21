@@ -62,21 +62,21 @@ a { color: inherit; }
   position: sticky; top: 0; z-index: 50;
   background: var(--microchip);
   display: flex; align-items: center; justify-content: space-between;
-  gap: 24px;
-  padding: 10px var(--gutter);
+  gap: 16px;
+  padding: 6px var(--gutter);
 }
-.nav__brand img { height: 30px; width: auto; }
+.nav__brand img { height: 24px; width: auto; }
 .nav__links {
-  display: flex; flex-wrap: wrap; gap: clamp(14px, 2.4vw, 40px);
+  display: flex; flex-wrap: wrap; gap: 2px;
 }
 .nav__links a {
   font-family: var(--head);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: clamp(13px, 1.5vw, 17px);
+  letter-spacing: 0.06em;
+  font-size: clamp(11px, 1.2vw, 14px);
   color: var(--beige);
   text-decoration: none;
-  padding: 4px 10px;
+  padding: 3px 8px;
   line-height: 1;
   transition: background 0.15s ease, color 0.15s ease;
 }
