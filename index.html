@@ -19,26 +19,28 @@
 
   /* --- Section scroll-reveal --- */
   .block.collapsible .rule {
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.75s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .block.collapsible.revealed .rule {
-    transform: scaleX(1);
+    clip-path: inset(0 0% 0 0);
   }
   .block.collapsible .block__body {
     max-height: 0;
     overflow: hidden;
     opacity: 0;
     margin-top: 0;
+    transform: translateY(-10px);
     transition:
-      max-height 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s,
-      opacity    0.6s ease 0.38s,
-      margin-top 0.5s ease 0.2s;
+      max-height  1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.3s,
+      opacity     0.75s ease                           0.45s,
+      margin-top  0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s,
+      transform   0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.3s;
   }
   .block.collapsible.revealed .block__body {
     opacity: 1;
     margin-top: 22px;
+    transform: translateY(0);
   }
 </style>
 </head>
@@ -469,7 +471,7 @@ window.addEventListener('DOMContentLoaded', function () {
       block.classList.add('revealed');
       io.unobserve(block);
     });
-  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+  }, { threshold: 0, rootMargin: '-18% 0px -52% 0px' });
 
   blocks.forEach(function (block) { io.observe(block); });
 });
