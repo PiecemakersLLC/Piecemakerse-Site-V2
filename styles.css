@@ -117,7 +117,7 @@ a { color: inherit; }
 .gb {
   position: relative;
   width: 100%;                  /* collapsed: open-ended widescreen marquee */
-  height: 72px;
+  height: 100px;               /* 50 logical px × 2 — sign band + buildings + ground */
   overflow: hidden;
   border: 0;                    /* no side bounding — just top/bottom rules */
   border-top: 1px solid var(--microchip);
