@@ -1,6 +1,8 @@
+# append to the site's existing robots.txt, adjusting the path to match
 User-agent: *
-Disallow: /s/2026-pm-4a7c/
+Disallow: /one-sheet/
 
+# common AI/scraper crawlers
 User-agent: GPTBot
 Disallow: /
 User-agent: CCBot
