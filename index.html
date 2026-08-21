@@ -461,15 +461,18 @@ window.addEventListener('DOMContentLoaded', function () {
     block.classList.add('collapsible');
   });
 
-  // Reveal on scroll
+  // Expand focal section, collapse all others
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
-      if (!entry.isIntersecting) return;
       var block = entry.target;
       var body = block.querySelector('.block__body');
-      if (body) body.style.maxHeight = (heights.get(block) || 3000) + 'px';
-      block.classList.add('revealed');
-      io.unobserve(block);
+      if (entry.isIntersecting) {
+        if (body) body.style.maxHeight = (heights.get(block) || 3000) + 'px';
+        block.classList.add('revealed');
+      } else {
+        block.classList.remove('revealed');
+        if (body) body.style.maxHeight = '';
+      }
     });
   }, { threshold: 0, rootMargin: '-18% 0px -52% 0px' });
 
